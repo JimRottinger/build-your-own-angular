@@ -24,8 +24,8 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
  - [ ] Part 4: Utilities
         - [ ] Promises
         - [ ] $http
- - [ ] Part 5: Directives
-        - [ ] DOM Compilation and Basic Directives
+ - [ ] Part 5: Directives 
+ 	- [ ] DOM Compilation and Basic Directives
         - [ ] Directive Attributes
         - [ ] Directive Linking and Scopes
         - [ ] Controllers
