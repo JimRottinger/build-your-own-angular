@@ -12,17 +12,17 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
 	- [ ] Watching Collections
 	- [ ] Scope Events
  - [ ] Part 2: Expressions and Filters
-        - [ ] Literal Expressions
+	- [ ] Literal Expressions
 	- [ ] Lookup and Function Call Expressions
         - [ ] Operator Expressions
         - [ ] Filters
         - [ ] Expressions and Watches
  - [ ] Part 3: Modules and Dependency Injection
-        - [ ] Modules and the Injector
+	- [ ] Modules and the Injector
         - [ ] Providers
         - [ ] High-Level DI Features
  - [ ] Part 4: Utilities
-        - [ ] Promises
+	- [ ] Promises
         - [ ] $http
  - [ ] Part 5: Directives 
  	- [ ] DOM Compilation and Basic Directives
