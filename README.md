@@ -24,7 +24,7 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
  - [ ] Part 4: Utilities
 	- [ ] Promises
         - [ ] $http
- - [ ] Part 5: Directives 
+ - [ ] Part 5: Directives
  	- [ ] DOM Compilation and Basic Directives
         - [ ] Directive Attributes
         - [ ] Directive Linking and Scopes
@@ -34,3 +34,9 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
 	- [ ] Interpolation
         - [ ] Components
         - [ ] Bootstrapping Angular
+
+## Notes
+
+This section contains my notes that I take as I read the information associated with the code examples.
+
+ - [Chapter 1: Scopes and Dirty-Checking](notes/chapter-one.md)
