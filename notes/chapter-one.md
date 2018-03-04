@@ -227,8 +227,11 @@ There is another gotcha here, there. Our solution works for watchers removing th
 
 ## Summary
 
+We have just learned all about the implementation of scope, $digest, and $watch in Angular. Some key points not to forget are:
 
-
-## Quiz
-
-## Quiz Answers
+ - The scope is just a plain-old JavaScript object void of any special getters or setters.
+ - A $watch function consists of a watcher function and a listener function. The watch function returns the value that it is watching and, if it has changed since the last iteration, the listener function will execute.
+ - The digest cycle involves iterating through all of the existing watchers and checking if their returned value has changed from the last iteration. If so, it executes the listener function. It does this iteration until none of the watchers come back dirty.
+ - The TTL (time-to-live) determines the max number of times that the digest cycle will go through all of the watchers.
+ - Angular supports both reference-based dirty-checking and value-based. It is reference-based by default because value-based checking involves iteration through all values to see if anything has changed.
+ - Because it is possible to remove watchers during the digest cycle, watchers are iterated from right-to-left to account for left-shifts in the array. In addition, it always checks that the watcher still exists before executing it.
