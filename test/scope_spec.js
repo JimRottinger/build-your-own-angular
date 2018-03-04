@@ -400,3 +400,54 @@ describe('digest', function() {
     expect(watchCalls).toEqual([1,1,1]); //first watcher executes twice
   });
 });
+
+describe('scope.$eval', function(){
+  var scope;
+
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it('executes $evaled function and returns result', function() {
+    scope.value = 11;
+
+    var result = scope.$eval(function(scope){
+      return scope.value;
+    });
+
+    expect(result).toEqual(11);
+  });
+
+  it('passes the second $eval argument straight through', function() {
+    scope.value = 11;
+
+    var result = scope.$eval(function(scope, arg){
+      return scope.value + 6;
+    }, 6);
+
+    expect(result).toEqual(17);
+  });
+});
+
+describe ('scope.$apply', function(){
+  var scope;
+
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it('executes the given function and starts the digest', function() {
+    var listenerFn = jasmine.createSpy();
+    scope.$watch(
+      function(scope) { return scope.value; },
+      listenerFn
+    );
+
+    scope.$apply(function(scope, arg){
+      scope.value = 1;
+    });
+
+    expect(scope.value).toEqual(1);
+    expect(listenerFn).toHaveBeenCalled();
+  });
+});

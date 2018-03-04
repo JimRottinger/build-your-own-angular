@@ -68,6 +68,18 @@ function Scope() {
     return newValue === oldValue ||
       (typeof newValue === 'number' && typeof oldValue === 'number' && isNaN(newValue) && isNaN(oldValue));
   };
+
+  this.$eval = function(fn, locals) {
+    return fn(this, locals);
+  };
+
+  this.$apply = function(fn, locals) {
+    try {
+      fn(this, locals);
+    } finally {
+      this.$digest();
+    }
+  };
 }
 
 module.exports = Scope;
