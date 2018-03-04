@@ -226,7 +226,7 @@ describe('digest', function() {
     var listenerFn = jasmine.createSpy();
 
     scope.$watch(
-      function(scope) { return scope.value },
+      function(scope) { return scope.value; },
       listenerFn,
       false //the true case is correctly handled by _.isEqual
     );
@@ -236,5 +236,167 @@ describe('digest', function() {
 
     scope.$digest();
     expect(listenerFn.calls.count()).toEqual(1);
+  });
+
+  it ('catches exceptions in the watch function and continues', function(){
+    scope.watchThis = 1;
+
+    scope.$watch(
+      function(scope){ throw 'Error'; },
+      function(newValue, oldValue, scope) {}
+    );
+
+    var listenerFn = jasmine.createSpy().and.callThrough();
+
+    scope.$watch(
+      function(scope){ return scope.watchThis; },
+      listenerFn
+    );
+
+    scope.$digest();
+    expect(listenerFn).toHaveBeenCalled();
+  });
+
+  it ('catches exceptions in the watch function and continues', function(){
+    scope.watchThis = 1;
+
+    scope.$watch(
+      function(scope){ return scope.watchThis; },
+      function(newValue, oldValue, scope) { throw "Error"; }
+    );
+
+    var listenerFn = jasmine.createSpy();
+    scope.watchThis2 = 2;
+    scope.$watch(
+      function(scope){ return scope.watchThis2; },
+      listenerFn
+    );
+
+    scope.$digest();
+    expect(listenerFn).toHaveBeenCalled();
+  });
+
+  it ('allows destroying a watch with a removal function', function() {
+    scope.watchThis = 1;
+
+    var listenerFn = jasmine.createSpy();
+
+    var destroyWatcher1 = scope.$watch(
+      function(scope){ return scope.watchThis; },
+      listenerFn
+    );
+
+    scope.$digest();
+    expect(listenerFn.calls.count()).toEqual(1);
+
+    destroyWatcher1(); //destroy the watcher
+
+    scope.watchThis = 2;
+    scope.$digest();
+    expect(listenerFn.calls.count()).toEqual(1);
+  });
+
+  it ('allows destroying a watch during a digest cycle', function() {
+    scope.watchThis = 1;
+
+    var watchCalls = [];
+
+    var destroyWatcher1 = scope.$watch(
+      function(scope) {
+        watchCalls.push(1);
+        return scope.watchThis;
+      },
+      function() {}
+    );
+
+    var destroyWatcher2 = scope.$watch(
+      function(scope) {
+        watchCalls.push(2);
+        return scope.watchThis;
+      },
+      function() {
+        destroyWatcher2();
+      }
+    );
+
+    var destroyWatcher3 = scope.$watch(
+      function(scope) {
+        watchCalls.push(3);
+        return scope.watchThis;
+      },
+      function() {}
+    );
+
+    scope.$digest();
+    expect(watchCalls).toEqual([1,2,3,1,3]);
+  });
+
+  it ('allows a $watch to destroying another $watch', function() {
+    scope.watchThis = 1;
+    var watchCalls = [];
+
+    var destroyWatcher1 = scope.$watch(
+      function(scope) {
+        watchCalls.push(1);
+        return scope.watchThis;
+      },
+      function() {
+        destroyWatcher2();
+      }
+    );
+
+    var destroyWatcher2 = scope.$watch(
+      function(scope) {
+        watchCalls.push(2);
+        return scope.watchThis;
+      },
+      function() { }
+    );
+
+    var destroyWatcher3 = scope.$watch(
+      function(scope) {
+        watchCalls.push(3);
+        return scope.watchThis;
+      },
+      function() {}
+    );
+
+    scope.$digest();
+    expect(watchCalls).toEqual([1,1,3,1,3]); //first watcher executes twice
+  });
+
+  it ('allows a $watch to destroy multiple other watches', function() {
+    scope.watchThis = 1;
+    var watchCalls = [];
+
+    var destroyWatcher1 = scope.$watch(
+      function(scope) {
+        watchCalls.push(1);
+        return scope.watchThis;
+      },
+      function() {
+        destroyWatcher2();
+        destroyWatcher3();
+      }
+    );
+
+    var destroyWatcher2 = scope.$watch(
+      function(scope) {
+        watchCalls.push(2);
+        return scope.watchThis;
+      },
+      function() { }
+    );
+
+    var destroyWatcher3 = scope.$watch(
+      function(scope) {
+        watchCalls.push(3);
+        return scope.watchThis;
+      },
+      function() {}
+    );
+
+    scope.$digest();
+    expect(watchCalls).toEqual([1,1,1]); //first watcher executes twice
   });
 });

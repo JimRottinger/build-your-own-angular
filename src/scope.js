@@ -10,12 +10,22 @@ function Scope() {
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
     this.$$lastDirtyWatcher = null;
-    this.$$watchers.push({
+
+    var thisWatcher = {
       watcherFn: watcherFn,
       listenerFn: listenerFn || function(){},
       compareByValue: compareByValue,
       last: function initWatchValue() {}
-    });
+    };
+    this.$$watchers.unshift(thisWatcher);
+
+    return function() {
+      var index = this.$$watchers.indexOf(thisWatcher);
+      if (index >= 0) {
+        this.$$watchers.splice(index, 1);
+        this.$$lastDirtyWatcher = null;
+      }
+    }.bind(this);
   };
 
   this.$digest = function() {
@@ -31,16 +41,22 @@ function Scope() {
 
   this.$$digestOnce = function() {
     var newValue, oldValue, dirty;
-    _.each(this.$$watchers, function(watcher){
-      newValue = watcher.watcherFn(this);
-      oldValue = watcher.last;
-      if (!this.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
-        dirty = true;
-        this.$$lastDirtyWatcher = watcher;
-        watcher.listenerFn(newValue, oldValue, this);
-        watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
-      } else if (this.$$lastDirtyWatcher === watcher) {
-        return false; //return false in a lodash loop causes it to break
+    _.forEachRight(this.$$watchers, function(watcher){
+      if (watcher) {
+        try {
+          newValue = watcher.watcherFn(this);
+          oldValue = watcher.last;
+          if (!this.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
+            dirty = true;
+            this.$$lastDirtyWatcher = watcher;
+            watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
+            watcher.listenerFn(newValue, oldValue, this);
+          } else if (this.$$lastDirtyWatcher === watcher) {
+            return false; //return false in a lodash loop causes it to break
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
     }.bind(this));
 

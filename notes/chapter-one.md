@@ -11,7 +11,7 @@ Of these, the watching for changes in value is the most interesting and the one 
 
 ## Scope Objects
 
-In Angular, scopes can be created by applying the `new` operator to the `Scope` constructor. The result is a plain old JavaScript object (POJO). Because it is simply a POJO, we attach properties to it by calling `.property = `. There are no special setters or getters that you need to call, nor restrictions on what values you assing.
+In Angular, scopes can be created by applying the `new` operator to the `Scope` constructor. The result is a plain old JavaScript object (POJO). Because it is simply a POJO, we attach properties to it by calling `.property = `. There are no special setters or getters that you need to call, nor restrictions on what values you setting.
 
 ## Watching Object Properties: $watch and $digest
 
@@ -214,6 +214,16 @@ this.$$areEqual = function(newValue, oldValue, compareByValue) {
 ### Handling Exceptions
 
 The dirty checking we have implemented thus far is starting to resemble Angular's, however, it is very brittle. We are allowing developers to define their own watch and listener functions and then not performing any exception handling. If even one exception occurs, the entire cycle will break.
+
+In the actual Angular implementation, it forwards exceptions to a special `$exceptionHandler` service. However, in our implementation, we will simply log them to the console.
+
+### Destroying a Watch
+
+When you register a watch, usually you want it to stay active as long as the scope itself does. There are cases, however, in which we need to explicitly remove a watcher while keeping the scope operational. That means we need a removal operation. The way Angular implements this is that the `$watch` function has a return value which is a function that, when invoked, destroys the watch that was registered. Therefore, if we want to remove the watcher later on, we have to keep ahold of that returned function and call it once to destroy it.
+
+This sounds straightforward enough, however, it gets tricky when we want to remove watchers during the digest cycle. And its tricky because of how JavaScript implements the each function. That is - when a value is removed from an array, the entire array beyond it is shifted to the left. If you were iterating through a list of three watchers, and the second watcher is meant to only run once and then remove itself, then the third watcher will not run. So how can we solve this shift-left problem? Firstly, instead of pushing new watchers to array, we can `unshift` them to the front. Then, when we iterate over all of them, we can iterate from back-to-front instead of front-to-back (lodash provides a handy `forEachRight` function for this, although its not that hard to write yourself). With these changes made, in our example of three watchers and the second one removing itself, the third watcher will still execute because we are iterating downwards and the ones being shifted have already been executing.
+
+There is another gotcha here, there. Our solution works for watchers removing themselves, but what if one watcher removes another? Specifically, what happens if one watcher causes an array shift in the part of the array that has not yet been executed? Even worse; what happens when one watcher removes many other watchers? For the first case, if a watcher were to remove the one next-in-line, it would end up executing twice because the array shifts itself down one into the next iteration position. This breaks our short-circuit optimization because if the watcher is dirty in the first execution and dirty in the second, then the forEach will return early. What we need to do is reset the `$$lastDirtyWatch` when a watcher is removed. Lastly, if a watcher destroys multiple other watchers, we run the risk of shifting the array down to the point at which the watcher at current iteration no longer exists. Therefore, we should explicity check if the watcher is still there before running anything in the digest cycle.
 
 ## Summary
 
