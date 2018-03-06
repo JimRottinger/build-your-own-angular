@@ -18,3 +18,9 @@ The implementation of `$eval` is incredibly simple, so what's the point of it? F
 
 `$apply` takes a function as an argument. It executes that function using `$eval`, and then kickstarts
 the digest cycle by invoking $digest. It is considered the standard way to integrate external libraries to Angular.
+
+## `$evalAsync` - Deferred Execution
+
+Often time in JavaScript, we want to defer the execution of a function to some point in the future when the current execution context has finished. The usual way to do this is by calling `setTimeout` with a zero delay parameter. This same pattern applies in Angular as well, though the preferred way to do it is by using the $timeout service which integrates the delayed function to the digest cycle with $apply.
+
+The other way to defer code in Angular is through the $evalAsync function on scopes. It takes a function and schedules it to run later but still during the ongoing digest. This is often preferable to $timeour with zero delay because of the browser event loop. $timeout inherently relinquishes control to the browser and lets it decide when to schedule work. $evalAsync, on the other hand, is gauranteed to execute during the ongoing digest cycle which happens in the same process on the event loop.

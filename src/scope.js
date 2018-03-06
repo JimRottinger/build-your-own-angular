@@ -6,6 +6,7 @@ function Scope() {
   this.$$watchers = [];
   this.$$lastDirtyWatcher = null;
   this.$$TTL = 10;
+  this.$$asyncQueue = [];
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
@@ -33,10 +34,14 @@ function Scope() {
     iterations = 0;
     this.$$lastDirtyWatcher = null;
     do {
+      while (this.$$asyncQueue.length) {
+        var asyncTask = this.$$asyncQueue.shift();
+        asyncTask.scope.$eval(asyncTask.fn);
+      }
       dirty = this.$$digestOnce();
       iterations++;
-      if (dirty && iterations >= this.$$TTL) throw "Max digests exceeded";
-    } while (dirty);
+      if ((dirty || this.$$asyncQueue.length) && iterations >= this.$$TTL) throw "Max digests exceeded";
+    } while (dirty || this.$$asyncQueue.length);
   };
 
   this.$$digestOnce = function() {
@@ -79,6 +84,13 @@ function Scope() {
     } finally {
       this.$digest();
     }
+  };
+
+  this.$evalAsync = function(fn) {
+    this.$$asyncQueue.push({
+      scope: this,
+      fn: fn
+    });
   };
 }
 

@@ -451,3 +451,91 @@ describe ('scope.$apply', function(){
     expect(listenerFn).toHaveBeenCalled();
   });
 });
+
+describe('scope.$evalAsync', function(){
+  var scope;
+
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it('executes given function later in the same cycle', function() {
+    scope.value = [1,2,3];
+    scope.asyncEvaluated = false;
+    scope.asyncEvaluatedImmediately = false;
+
+    scope.$watch(
+      function(scope) { return scope.value; },
+      function(newValue, oldValue, scope) {
+        scope.$evalAsync(function(scope){
+          scope.asyncEvaluated = true;
+        });
+        scope.asyncEvaluatedImmediately = scope.asyncEvaluated;
+      }
+    );
+
+    scope.$digest();
+    expect(scope.asyncEvaluated).toBe(true);
+    expect(scope.asyncEvaluatedImmediately).toBe(false);
+  });
+
+  it('executes $evalAsynced functions added by watch functions', function() {
+    scope.value = [1,2,3];
+    scope.asyncEvalulated = false;
+
+    scope.$watch(
+      function(scope) {
+        if (!scope.asyncEvalulated) {
+          scope.$evalAsync(function(scope) {
+            scope.asyncEvalulated = true;
+          });
+        }
+        return scope.value;
+      },
+      function(newValue, oldValue, scope) { }
+    );
+
+    scope.$digest();
+    expect(scope.asyncEvalulated).toBe(true);
+  });
+
+  it('executes given function later in the same cycle', function() {
+    scope.value = [1,2,3];
+    scope.asyncEvaluated = false;
+    scope.asyncEvaluatedImmediately = false;
+
+    scope.$watch(
+      function(scope) { return scope.value; },
+      function(newValue, oldValue, scope) {
+        scope.$evalAsync(function(scope){
+          scope.asyncEvaluated = true;
+        });
+        scope.asyncEvaluatedImmediately = scope.asyncEvaluated;
+      }
+    );
+
+    scope.$digest();
+    expect(scope.asyncEvaluated).toBe(true);
+    expect(scope.asyncEvaluatedImmediately).toBe(false);
+  });
+
+  it('executes $evalAsynced functions added by watch functions', function() {
+    scope.value = [1,2,3];
+    scope.asyncEvalulatedTimes = 0;
+
+    scope.$watch(
+      function(scope) {
+        if (scope.asyncEvalulatedTimes < 2) {
+          scope.$evalAsync(function(scope) {
+            scope.asyncEvalulatedTimes++;
+          });
+        }
+        return scope.value;
+      },
+      function(newValue, oldValue, scope) { }
+    );
+
+    scope.$digest();
+    expect(scope.asyncEvalulatedTimes).toBe(2);
+  });
+});
