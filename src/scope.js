@@ -7,6 +7,20 @@ function Scope() {
   this.$$lastDirtyWatcher = null;
   this.$$TTL = 10;
   this.$$asyncQueue = [];
+  this.$$applyAsyncQueue = [];
+  this.$$phase = null;
+  this.$$applyAsyncId = null;
+
+  this.$beginPhase = function(phase) {
+    if (this.$$phase) {
+      throw this.$$phase + ' already in progress';
+    }
+    this.$$phase = phase;
+  };
+
+  this.$clearPhase = function() {
+    this.$$phase = null;
+  };
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
@@ -33,6 +47,13 @@ function Scope() {
     var dirty, iterations;
     iterations = 0;
     this.$$lastDirtyWatcher = null;
+    this.$beginPhase('$digest');
+
+    if (this.$$applyAsyncId) {
+      clearTimeout(this.$$applyAsyncId);
+      this.$$flushApplyAsync();
+    }
+
     do {
       while (this.$$asyncQueue.length) {
         var asyncTask = this.$$asyncQueue.shift();
@@ -40,8 +61,12 @@ function Scope() {
       }
       dirty = this.$$digestOnce();
       iterations++;
-      if ((dirty || this.$$asyncQueue.length) && iterations >= this.$$TTL) throw "Max digests exceeded";
+      if ((dirty || this.$$asyncQueue.length) && iterations >= this.$$TTL) {
+        this.$clearPhase();
+        throw "Max digests exceeded";
+      }
     } while (dirty || this.$$asyncQueue.length);
+    this.$clearPhase();
   };
 
   this.$$digestOnce = function() {
@@ -79,18 +104,46 @@ function Scope() {
   };
 
   this.$apply = function(fn, locals) {
+    this.$beginPhase('$apply');
     try {
       fn(this, locals);
     } finally {
+      this.$clearPhase();
       this.$digest();
     }
   };
 
   this.$evalAsync = function(fn) {
+    if (!this.$$phase && !this.$$asyncQueue.length) {
+      setTimeout(function(){
+        if (this.$$asyncQueue.length) this.$digest();
+      }.bind(this), 0);
+    }
+
     this.$$asyncQueue.push({
       scope: this,
       fn: fn
     });
+    this.$digest();
+  };
+
+  this.$applyAsync = function(fn) {
+    this.$$applyAsyncQueue.push(function(){
+      this.$eval(fn);
+    }.bind(this));
+
+    if (!this.$$applyAsyncId) {
+      this.$$applyAsyncId = setTimeout(function(){
+        this.$apply(_.bind(this.$$flushApplyAsync, this));
+      }.bind(this), 0);
+    }
+  };
+
+  this.$$flushApplyAsync = function(){
+    while (this.$$applyAsyncQueue.length) {
+      this.$$applyAsyncQueue.shift()();
+    }
+    this.$$applyAsyncId = null;
   };
 }
 
