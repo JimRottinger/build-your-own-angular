@@ -539,7 +539,7 @@ describe('scope.$evalAsync', function(){
     expect(scope.asyncEvalulatedTimes).toBe(2);
   });
 
-  it('schedules a difest in $evalAsync', function(done){
+  it('schedules a digest in $evalAsync', function(done){
     scope.value = 1;
     var listenerFn = jasmine.createSpy();
 
@@ -588,5 +588,109 @@ describe('scope.$$phase', function(){
     expect(scope.phaseInWatchFunction).toEqual('$digest');
     expect(scope.phaseInListenerFunction).toEqual('$digest');
     expect(scope.phaseInApplyFunction).toEqual('$apply');
+  });
+});
+
+describe('$applyAsync', function(){
+  var scope;
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it('allows async $apply with $applyAsync', function(done){
+    scope.value = 1;
+    var listenerFn = jasmine.createSpy();
+
+    scope.$watch(
+      function(scope){ return scope.value; },
+      listenerFn
+    );
+
+    scope.$digest();
+    expect(listenerFn.calls.count()).toEqual(1);
+
+    scope.$applyAsync(function(scope){
+      scope.value = 2;
+    });
+    expect(listenerFn.calls.count()).toEqual(1);
+
+    setTimeout(function(){
+      expect(listenerFn.calls.count()).toEqual(2);
+      done();
+    }, 50);
+  });
+
+  it('never executes $applyAsynced function in the same cycle', function(done){
+    scope.value = 1;
+    scope.asyncApplied = false;
+
+    scope.$watch(
+      function(scope) { return scope.value; },
+      function(newValue, oldValue, scope) {
+        scope.$applyAsync(function(scope){
+          scope.asyncApplied = true;
+        });
+      }
+    );
+
+    scope.$digest();
+    expect(scope.asyncApplied).toBe(false);
+    setTimeout(function(){
+      expect(scope.asyncApplied).toBe(true);
+      done();
+    }, 50);
+  });
+
+  it('should coalesce many calls to $applyAsync', function(done){
+    var watchCalls = 0;
+
+    scope.$watch(
+      function(scope) {
+        watchCalls++;
+        return scope.value;
+      },
+      function(){}
+    );
+
+    scope.$applyAsync(function(scope){
+      scope.value = 2;
+    });
+    scope.$applyAsync(function(scope){
+      scope.value = 3;
+    });
+
+    setTimeout(function(){
+      expect(watchCalls).toEqual(2);
+      done();
+    }, 50);
+  });
+
+  it('should cancel and flush $applyAsync if digested first', function(done){
+    scope.value = 0;
+    var watchCalls = 0;
+
+    scope.$watch(
+      function(scope) {
+        watchCalls++;
+        return scope.value;
+      },
+      function(){}
+    );
+
+    scope.$applyAsync(function(scope){
+      scope.value = 1;
+    });
+    scope.$applyAsync(function(scope){
+      scope.value = 2;
+    });
+
+    scope.$digest();
+    expect(watchCalls).toBe(2);
+    expect(scope.value).toEqual(2);
+
+    setTimeout(function(){
+      expect(watchCalls).toBe(2); //should still be 2 because the async digest should not happen
+      done();
+    }, 50);
   });
 });
