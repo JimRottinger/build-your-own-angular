@@ -33,6 +33,42 @@ function Scope() {
     }.bind(this);
   };
 
+  this.$watchGroup = function(watcherFnList, listenerFn) {
+    var self = this;
+    var newValues = new Array(watcherFnList.length);
+    var oldValues = new Array(watcherFnList.length);
+    var changeReactionScheduled = false;
+    var firstRun = true;
+
+    if (watcherFnList.length === 0) {
+      self.$evalAsync(function() {
+        listenerFn(newValues, oldValues, self);
+      });
+    }
+
+    function watchGroupListener() {
+      if (firstRun) {
+        firstRun = false;
+        listenerFn(newValues, newValues, self);
+      } else {
+        listenerFn(newValues, oldValues, self);
+      }
+      changeReactionScheduled = false;
+    }
+
+    _.forEach(watcherFnList, function(watcherFn, i){
+      self.$watch(watcherFn, function(newValue, oldValue){
+        newValues[i] = newValue;
+        oldValues[i] = oldValue;
+
+        if (!changeReactionScheduled) {
+          changeReactionScheduled = true;
+          self.$evalAsync(watchGroupListener);
+        }
+      });
+    });
+  };
+
   this.$beginPhase = function(phase) {
     if (this.$$phase) {
       throw this.$$phase + ' already in progress';
@@ -57,8 +93,12 @@ function Scope() {
 
     do {
       while (this.$$asyncQueue.length) {
-        var asyncTask = this.$$asyncQueue.shift();
-        asyncTask.scope.$eval(asyncTask.fn);
+        try {
+          var asyncTask = this.$$asyncQueue.shift();
+          asyncTask.scope.$eval(asyncTask.fn);
+        } catch (e) {
+          console.error('Error in $asyncQueue: ', e);
+        }
       }
       dirty = this.$$digestOnce();
       iterations++;
@@ -147,14 +187,22 @@ function Scope() {
 
   this.$$flushApplyAsync = function() {
     while (this.$$applyAsyncQueue.length) {
-      this.$$applyAsyncQueue.shift()();
+      try {
+        this.$$applyAsyncQueue.shift()();
+      } catch (e) {
+        console.error('Error in $applyAsync: ', e);
+      }
     }
     this.$$applyAsyncId = null;
   };
 
   this.$$flushPostDigestQueue = function() {
     while (this.$$postDigestQueue.length) {
-      this.$$postDigestQueue.shift()();
+      try {
+        this.$$postDigestQueue.shift()();
+      } catch (e) {
+        console.error('Error in $$postDigest: ', e);
+      }
     }
   };
 }

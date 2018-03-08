@@ -555,6 +555,25 @@ describe('scope.$evalAsync', function(){
       done();
     }, 50);
   });
+
+  it('should correctly catch an error in the eval asynced function', function(done){
+    scope.counter = 0;
+    scope.$watch(
+      function(scope) {
+        return scope.value;
+      },
+      function(){ scope.counter++; }
+    );
+
+    scope.$evalAsync(function(scope){
+      throw "Error in eval Async";
+    });
+
+    setTimeout(function(){
+      expect(scope.counter).toEqual(1);
+      done();
+    }.bind(this), 50);
+  });
 });
 
 describe('scope.$$phase', function(){
@@ -715,5 +734,64 @@ describe('$$postDigest', function(){
     scope.$digest();
 
     expect(scope.counter).toBe(1);
+  });
+});
+
+describe('$watchGroup', function(){
+  var scope;
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it ('takes watches as an array and calls listener with arrays', function(){
+    var gotNewValues, gotOldValues;
+
+    scope.value = 1;
+    scope.value2 = 2;
+
+    scope.$watchGroup([
+      function(scope) { return scope.value; },
+      function(scope) { return scope.value2; }
+    ],
+    function(newValues, oldValues, scope){
+      gotNewValues = newValues;
+      gotOldValues = oldValues;
+    });
+    scope.$digest();
+
+    scope.value = 11;
+    scope.value2 = 22;
+    scope.$digest();
+    expect(gotNewValues).toEqual([11,22]);
+    expect(gotOldValues).toEqual([1,2]);
+  });
+
+  it ('should only call the listener once per digest', function(){
+    scope.value = 1;
+    scope.value2 = 2;
+    var listenerFn = jasmine.createSpy();
+
+    scope.$watchGroup([
+      function(scope) { return scope.value; },
+      function(scope) { return scope.value2; }
+    ],
+    listenerFn
+    );
+    scope.$digest();
+
+    expect(listenerFn.calls.count()).toEqual(1);
+  });
+
+  it ('should take in an empty array of watchers and call the listener once', function(){
+    var newVals, oldVals;
+
+    scope.$watchGroup([], function(newValues, oldValues, scope){
+      newVals = newValues;
+      oldVals = oldValues;
+    });
+    scope.$digest();
+
+    expect(newVals).toEqual([]);
+    expect(oldVals).toEqual([]);
   });
 });
