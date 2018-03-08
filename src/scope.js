@@ -8,8 +8,9 @@ function Scope() {
   this.$$TTL = 10;
   this.$$asyncQueue = [];
   this.$$applyAsyncQueue = [];
-  this.$$phase = null;
   this.$$applyAsyncId = null;
+  this.$$postDigestQueue = [];
+  this.$$phase = null;
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
@@ -67,6 +68,7 @@ function Scope() {
       }
     } while (dirty || this.$$asyncQueue.length);
     this.$clearPhase();
+    this.$$flushPostDigestQueue();
   };
 
   this.$$digestOnce = function() {
@@ -91,6 +93,10 @@ function Scope() {
     }.bind(this));
 
     return dirty;
+  };
+
+  this.$$postDigest = function(fn){
+    this.$$postDigestQueue.push(fn);
   };
 
   this.$$areEqual = function(newValue, oldValue, compareByValue) {
@@ -139,11 +145,17 @@ function Scope() {
     }
   };
 
-  this.$$flushApplyAsync = function(){
+  this.$$flushApplyAsync = function() {
     while (this.$$applyAsyncQueue.length) {
       this.$$applyAsyncQueue.shift()();
     }
     this.$$applyAsyncId = null;
+  };
+
+  this.$$flushPostDigestQueue = function() {
+    while (this.$$postDigestQueue.length) {
+      this.$$postDigestQueue.shift()();
+    }
   };
 }
 
