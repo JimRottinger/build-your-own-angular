@@ -41,9 +41,13 @@ function Scope() {
     var firstRun = true;
 
     if (watcherFnList.length === 0) {
+      var shouldRun = true;
       self.$evalAsync(function() {
-        listenerFn(newValues, oldValues, self);
+        if (shouldRun) listenerFn(newValues, oldValues, self);
       });
+      return function() {
+        shouldRun = false;
+      };
     }
 
     function watchGroupListener() {
@@ -56,8 +60,8 @@ function Scope() {
       changeReactionScheduled = false;
     }
 
-    _.forEach(watcherFnList, function(watcherFn, i){
-      self.$watch(watcherFn, function(newValue, oldValue){
+    var destroyFunctions = _.map(watcherFnList, function(watcherFn, i){
+      return self.$watch(watcherFn, function(newValue, oldValue){
         newValues[i] = newValue;
         oldValues[i] = oldValue;
 
@@ -67,6 +71,12 @@ function Scope() {
         }
       });
     });
+
+    return function() {
+      _.forEach(destroyFunctions, function(fn){
+        fn();
+      });
+    };
   };
 
   this.$beginPhase = function(phase) {

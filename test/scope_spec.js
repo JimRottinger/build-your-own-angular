@@ -794,4 +794,24 @@ describe('$watchGroup', function(){
     expect(newVals).toEqual([]);
     expect(oldVals).toEqual([]);
   });
+
+  it ('can deregister a watch group', function(){
+    var listenerFn = jasmine.createSpy();
+
+    scope.value = 1;
+    scope.value2 = 2;
+
+    var destroyGroup = scope.$watchGroup([
+      function(scope){ return scope.value; },
+      function(scope){ return scope.value2; }
+    ], listenerFn);
+    scope.$digest();
+    expect(listenerFn.calls.count()).toEqual(1);
+
+    scope.value = 11;
+    scope.value2 = 22;
+    destroyGroup();
+    scope.$digest();
+    expect(listenerFn.calls.count()).toEqual(1);
+  });
 });

@@ -6,8 +6,8 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
 
  - [x] Bootstrapped Project
  - [ ] Part 1: Scopes
-	- [ ] Scopes and Digest
-	- [ ] Scope Methods
+	- [x] Scopes and Digest
+	- [x] Scope Methods
 	- [ ] Scope Inheritance
 	- [ ] Watching Collections
 	- [ ] Scope Events
