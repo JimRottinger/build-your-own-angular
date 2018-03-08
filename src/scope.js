@@ -7,6 +7,7 @@ function Scope() {
   this.$$lastDirtyWatcher = null;
   this.$$TTL = 10;
   this.$$asyncQueue = [];
+  this.$$phase = null;
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
@@ -29,10 +30,19 @@ function Scope() {
     }.bind(this);
   };
 
+  this.$beginPhase = function(phase) {
+    this.$$phase = phase;
+  };
+
+  this.$clearPhase = function() {
+    this.$$phase = null;
+  };
+
   this.$digest = function() {
     var dirty, iterations;
     iterations = 0;
     this.$$lastDirtyWatcher = null;
+    this.$beginPhase('$digest');
     do {
       while (this.$$asyncQueue.length) {
         var asyncTask = this.$$asyncQueue.shift();
@@ -42,6 +52,8 @@ function Scope() {
       iterations++;
       if ((dirty || this.$$asyncQueue.length) && iterations >= this.$$TTL) throw "Max digests exceeded";
     } while (dirty || this.$$asyncQueue.length);
+
+    this.$clearPhase();
   };
 
   this.$$digestOnce = function() {
@@ -79,14 +91,21 @@ function Scope() {
   };
 
   this.$apply = function(fn, locals) {
+    this.$beginPhase('$apply');
     try {
       fn(this, locals);
     } finally {
       this.$digest();
     }
+    this.$clearPhase();
   };
 
   this.$evalAsync = function(fn) {
+    if (!this.$$phase && !this.$$asyncQueue.length) {
+      setTimeout(function() {
+        if (this.$$asyncQueue.length) this.$digest();
+      }.bind(this), 0);
+    }
     this.$$asyncQueue.push({
       scope: this,
       fn: fn

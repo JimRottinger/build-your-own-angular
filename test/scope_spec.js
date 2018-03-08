@@ -538,4 +538,55 @@ describe('scope.$evalAsync', function(){
     scope.$digest();
     expect(scope.asyncEvalulatedTimes).toBe(2);
   });
+
+  it('schedules a difest in $evalAsync', function(done){
+    scope.value = 1;
+    var listenerFn = jasmine.createSpy();
+
+    scope.$watch(
+      function(scope){ return scope.value; },
+      listenerFn
+    );
+
+    scope.$evalAsync(function(scope){});
+    expect(listenerFn.calls.count()).toEqual(0);
+    setTimeout(function(){
+      expect(listenerFn.calls.count()).toEqual(1);
+      done();
+    }, 50);
+  });
+});
+
+describe('scope.$$phase', function(){
+  var scope;
+
+  beforeEach(function(){
+    scope = new Scope();
+  });
+
+  it('has a $$phase field whose value is the current digest phase', function() {
+    scope.value = [1,2,3];
+    scope.phaseInWatchFunction = undefined;
+    scope.phaseInListenerFunction = undefined;
+    scope.phaseInApplyFunction = undefined;
+
+    expect(scope.$$phase).toEqual(null);
+
+    scope.$watch(
+      function(scope){
+        scope.phaseInWatchFunction = scope.$$phase;
+      },
+      function(oldValue, newValue, scope) {
+        scope.phaseInListenerFunction = scope.$$phase;
+      }
+    );
+
+    scope.$apply(function(scope) {
+      scope.phaseInApplyFunction = scope.$$phase;
+    });
+
+    expect(scope.phaseInWatchFunction).toEqual('$digest');
+    expect(scope.phaseInListenerFunction).toEqual('$digest');
+    expect(scope.phaseInApplyFunction).toEqual('$apply');
+  });
 });
