@@ -12,6 +12,13 @@ function Scope() {
   this.$$postDigestQueue = [];
   this.$$phase = null;
 
+  this.$new = function() {
+    var ChildScope = function() { };
+    ChildScope.prototype = this;
+
+    return new ChildScope();
+  }
+
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
     this.$$lastDirtyWatcher = null;
