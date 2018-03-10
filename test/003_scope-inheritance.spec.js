@@ -57,4 +57,26 @@ describe('Scope Inheritance', function(){
     childScope.$digest();
     expect(childListenerFn.calls.count()).toEqual(2);
   });
+
+  it('shadows a parents property with the same name', function(){
+    var parent = new Scope();
+    var child = parent.$new();
+
+    parent.name = 'John';
+    child.name = 'Jim';
+
+    expect(child.name).toBe('Jim');
+    expect(parent.name).toBe('John');
+  });
+
+  it('should not shadow members of the parent scopes attributes', function (){
+    var parent = new Scope();
+    var child = parent.$new();
+
+    parent.user = {name: 'John'};
+    child.user.name = 'Jim';
+
+    expect(child.user.name).toBe('Jim');
+    expect(parent.user.name).toBe('Jim');
+  });
 });
