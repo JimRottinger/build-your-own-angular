@@ -79,4 +79,20 @@ describe('Scope Inheritance', function(){
     expect(child.user.name).toBe('Jim');
     expect(parent.user.name).toBe('Jim');
   });
+
+  it('does not digest its parent(s)', function() {
+    var parent = new Scope();
+    var child = parent.$new();
+
+    parent.value = 1;
+    parent.$watch(
+      function(scope) { return scope.value; },
+      function(newValue, oldValue, scope) {
+          scope.valueWas = newValue;
+      }
+    );
+
+    child.$digest();
+    expect(child.valueWas).toBeUndefined();
+  });
 });

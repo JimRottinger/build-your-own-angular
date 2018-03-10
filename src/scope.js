@@ -13,11 +13,12 @@ function Scope() {
   this.$$phase = null;
 
   this.$new = function() {
-    var ChildScope = function() { };
+    var ChildScope = function() {
+      this.$$watchers = [];
+    };
     ChildScope.prototype = this;
-
     return new ChildScope();
-  }
+  };
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
