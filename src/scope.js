@@ -11,13 +11,17 @@ function Scope() {
   this.$$applyAsyncId = null;
   this.$$postDigestQueue = [];
   this.$$phase = null;
+  this.$$children = [];
 
   this.$new = function() {
     var ChildScope = function() {
       this.$$watchers = [];
+      this.$$children = [];
     };
     ChildScope.prototype = this;
-    return new ChildScope();
+    var child = new ChildScope();
+    this.$$children.push(child);
+    return child;
   };
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
@@ -130,27 +134,43 @@ function Scope() {
   };
 
   this.$$digestOnce = function() {
-    var newValue, oldValue, dirty;
-    _.forEachRight(this.$$watchers, function(watcher){
-      if (watcher) {
-        try {
-          newValue = watcher.watcherFn(this);
-          oldValue = watcher.last;
-          if (!this.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
-            dirty = true;
-            this.$$lastDirtyWatcher = watcher;
-            watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
-            watcher.listenerFn(newValue, oldValue, this);
-          } else if (this.$$lastDirtyWatcher === watcher) {
-            return false; //return false in a lodash loop causes it to break
+    var dirty;
+    var continueLoop = true;
+    this.$$everyScope(function(scope) {
+      var newValue, oldValue;
+      _.forEachRight(scope.$$watchers, function(watcher){
+        if (watcher) {
+          try {
+            newValue = watcher.watcherFn(scope);
+            oldValue = watcher.last;
+            if (!scope.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
+              dirty = true;
+              this.$$lastDirtyWatcher = watcher;
+              watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
+              watcher.listenerFn(newValue, oldValue, scope);
+            } else if (this.$$lastDirtyWatcher === watcher) {
+              continueLoop = false;
+              return false; //return false in a lodash loop causes it to break
+            }
+          } catch (e) {
+            console.error(e);
           }
-        } catch (e) {
-          console.error(e);
         }
-      }
+      }.bind(this));
+      return continueLoop;
     }.bind(this));
 
     return dirty;
+  };
+
+  this.$$everyScope = function(fn) {
+    if (fn(this)) {
+      return this.$$children.every(function(child) {
+        return child.$$everyScope(fn);
+      });
+    } else {
+      return false;
+    }
   };
 
   this.$$postDigest = function(fn){
