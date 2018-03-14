@@ -10,6 +10,7 @@ function Scope() {
   this.$$applyAsyncQueue = [];
   this.$$applyAsyncId = null;
   this.$$postDigestQueue = [];
+  this.$root = this;
   this.$$phase = null;
   this.$$children = [];
 
@@ -26,7 +27,7 @@ function Scope() {
 
   this.$watch = function(watcherFn, listenerFn, compareByValue) {
     compareByValue = compareByValue ? true : false;
-    this.$$lastDirtyWatcher = null;
+    this.$root.$$lastDirtyWatcher = null;
 
     var thisWatcher = {
       watcherFn: watcherFn,
@@ -35,12 +36,13 @@ function Scope() {
       last: function initWatchValue() {}
     };
     this.$$watchers.unshift(thisWatcher);
+    this.$eoor
 
     return function() {
       var index = this.$$watchers.indexOf(thisWatcher);
       if (index >= 0) {
         this.$$watchers.splice(index, 1);
-        this.$$lastDirtyWatcher = null;
+        this.$root.$$lastDirtyWatcher = null;
       }
     }.bind(this);
   };
@@ -105,7 +107,7 @@ function Scope() {
   this.$digest = function() {
     var dirty, iterations;
     iterations = 0;
-    this.$$lastDirtyWatcher = null;
+    this.$root.$$lastDirtyWatcher = null;
     this.$beginPhase('$digest');
 
     if (this.$$applyAsyncId) {
@@ -145,10 +147,10 @@ function Scope() {
             oldValue = watcher.last;
             if (!scope.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
               dirty = true;
-              this.$$lastDirtyWatcher = watcher;
+              this.$root.$$lastDirtyWatcher = watcher;
               watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
               watcher.listenerFn(newValue, oldValue, scope);
-            } else if (this.$$lastDirtyWatcher === watcher) {
+            } else if (this.$root.$$lastDirtyWatcher === watcher) {
               continueLoop = false;
               return false; //return false in a lodash loop causes it to break
             }
@@ -193,7 +195,7 @@ function Scope() {
       fn(this, locals);
     } finally {
       this.$clearPhase();
-      this.$digest();
+      this.$root.$digest();
     }
     this.$clearPhase();
   };
@@ -201,7 +203,7 @@ function Scope() {
   this.$evalAsync = function(fn) {
     if (!this.$$phase && !this.$$asyncQueue.length) {
       setTimeout(function(){
-        if (this.$$asyncQueue.length) this.$digest();
+        if (this.$$asyncQueue.length) this.$root.$digest();
       }.bind(this), 0);
     }
 

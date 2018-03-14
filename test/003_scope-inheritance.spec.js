@@ -124,4 +124,40 @@ describe('Scope Inheritance', function(){
     parent.$digest();
     expect(child.valueWas).toBe(1);
   });
+
+  it('digests from root on $apply', function(){
+    var parent = new Scope();
+    var child = parent.$new();
+
+    parent.value = 1;
+    parent.$watch(
+      function(scope) { return parent.value; },
+      function(newValue, oldValue, scope) {
+        child.valueWas = newValue;
+      }
+    );
+
+    child.$apply(function(scope){ });
+    expect(child.valueWas).toBeDefined();
+  });
+
+  it('digests from root on $evalAsync', function(done){
+    var parent = new Scope();
+    var child = parent.$new();
+
+    parent.value = 1;
+    parent.$watch(
+      function(scope) { return parent.value; },
+      function(newValue, oldValue, scope) {
+        child.valueWas = newValue;
+      }
+    );
+
+    child.$evalAsync(function(scope){ });
+
+    setTimeout(function(){
+      expect(child.valueWas).toBeDefined();
+      done();
+    }, 50);
+  });
 });
