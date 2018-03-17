@@ -14,14 +14,28 @@ function Scope() {
   this.$$phase = null;
   this.$$children = [];
 
-  this.$new = function() {
+  this.$new = function(isolated, parent) {
+    var child;
+    parent = parent || this;
+
     var ChildScope = function() {
       this.$$watchers = [];
       this.$$children = [];
+      this.$parent = parent;
     };
     ChildScope.prototype = this;
-    var child = new ChildScope();
-    this.$$children.push(child);
+
+    if (isolated) {
+      child = new Scope();
+      child.$root = parent.$root;
+      child.$$asyncQueue = parent.$$asyncQueue;
+      child.$$postDigestQueue = parent.$$postDigestQueue;
+      child.$$applyAsyncQueue = parent.$$applyAsyncQueue;
+    } else {
+      child = new ChildScope();
+    }
+
+    parent.$$children.push(child);
     return child;
   };
 
@@ -36,7 +50,6 @@ function Scope() {
       last: function initWatchValue() {}
     };
     this.$$watchers.unshift(thisWatcher);
-    this.$eoor
 
     return function() {
       var index = this.$$watchers.indexOf(thisWatcher);
@@ -110,8 +123,8 @@ function Scope() {
     this.$root.$$lastDirtyWatcher = null;
     this.$beginPhase('$digest');
 
-    if (this.$$applyAsyncId) {
-      clearTimeout(this.$$applyAsyncId);
+    if (this.$root.$$applyAsyncId) {
+      clearTimeout(this.$root.$$applyAsyncId);
       this.$$flushApplyAsync();
     }
 
@@ -218,8 +231,8 @@ function Scope() {
       this.$eval(fn);
     }.bind(this));
 
-    if (!this.$$applyAsyncId) {
-      this.$$applyAsyncId = setTimeout(function(){
+    if (!this.$root.$$applyAsyncId) {
+      this.$root.$$applyAsyncId = setTimeout(function(){
         this.$apply(_.bind(this.$$flushApplyAsync, this));
       }.bind(this), 0);
     }
@@ -233,7 +246,7 @@ function Scope() {
         console.error('Error in $applyAsync: ', e);
       }
     }
-    this.$$applyAsyncId = null;
+    this.$root.$$applyAsyncId = null;
   };
 
   this.$$flushPostDigestQueue = function() {
@@ -244,6 +257,17 @@ function Scope() {
         console.error('Error in $$postDigest: ', e);
       }
     }
+  };
+
+  this.$destroy = function() {
+    if (this.$parent) {
+      var siblings = this.$parent.$$children;
+      var indexOfThis = siblings.indexOf(this);
+      if (indexOfThis >= 0) {
+        siblings.splice(indexOfThis, 1);
+      }
+    }
+    this.$$watchers = null;
   };
 }
 
