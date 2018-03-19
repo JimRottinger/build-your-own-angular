@@ -9,7 +9,7 @@ Building my own angular (to learn it) by following along with Tero Parvianen's B
 	- [x] Scopes and Digest
 	- [x] Scope Methods
 	- [x] Scope Inheritance
-	- [ ] Watching Collections
+	- [x] Watching Collections
 	- [ ] Scope Events
  - [ ] Part 2: Expressions and Filters
 	- [ ] Literal Expressions
