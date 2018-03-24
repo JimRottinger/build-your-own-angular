@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
 
-var _ = require('lodash');
+var _ = require("lodash");
 
 function isArrayLike(obj) {
   if (_.isNull(obj) || _.isUndefined(obj)) {
     return false;
   }
   var length = obj.length;
-  return length === 0 ||
-    (_.isNumber(length) && length > 0 && (length - 1) in obj);
+  return (
+    length === 0 || (_.isNumber(length) && length > 0 && length - 1 in obj)
+  );
 }
 
 function Scope() {
@@ -22,6 +23,7 @@ function Scope() {
   this.$root = this;
   this.$$phase = null;
   this.$$children = [];
+  this.$$listeners = {};
 
   this.$new = function(isolated, parent) {
     var child;
@@ -30,6 +32,7 @@ function Scope() {
     var ChildScope = function() {
       this.$$watchers = [];
       this.$$children = [];
+      this.$$listeners = {};
       this.$parent = parent;
     };
     ChildScope.prototype = this;
@@ -54,7 +57,7 @@ function Scope() {
 
     var thisWatcher = {
       watcherFn: watcherFn,
-      listenerFn: listenerFn || function(){},
+      listenerFn: listenerFn || function() {},
       compareByValue: compareByValue,
       last: function initWatchValue() {}
     };
@@ -96,8 +99,8 @@ function Scope() {
       changeReactionScheduled = false;
     }
 
-    var destroyFunctions = _.map(watcherFnList, function(watcherFn, i){
-      return self.$watch(watcherFn, function(newValue, oldValue){
+    var destroyFunctions = _.map(watcherFnList, function(watcherFn, i) {
+      return self.$watch(watcherFn, function(newValue, oldValue) {
         newValues[i] = newValue;
         oldValues[i] = oldValue;
 
@@ -109,7 +112,7 @@ function Scope() {
     });
 
     return function() {
-      _.forEach(destroyFunctions, function(fn){
+      _.forEach(destroyFunctions, function(fn) {
         fn();
       });
     };
@@ -117,7 +120,7 @@ function Scope() {
 
   this.$watchCollection = function(watchFn, listenerFn) {
     var newValue, oldValue, oldLength, veryOldValue;
-    var trackVeryOldValue = (listenerFn.length > 1);
+    var trackVeryOldValue = listenerFn.length > 1;
     var changeCount = 0;
     var firstRun = true;
 
@@ -201,7 +204,7 @@ function Scope() {
 
   this.$beginPhase = function(phase) {
     if (this.$$phase) {
-      throw this.$$phase + ' already in progress';
+      throw this.$$phase + " already in progress";
     }
     this.$$phase = phase;
   };
@@ -214,7 +217,7 @@ function Scope() {
     var dirty, iterations;
     iterations = 0;
     this.$root.$$lastDirtyWatcher = null;
-    this.$beginPhase('$digest');
+    this.$beginPhase("$digest");
 
     if (this.$root.$$applyAsyncId) {
       clearTimeout(this.$root.$$applyAsyncId);
@@ -227,7 +230,7 @@ function Scope() {
           var asyncTask = this.$$asyncQueue.shift();
           asyncTask.scope.$eval(asyncTask.fn);
         } catch (e) {
-          console.error('Error in $asyncQueue: ', e);
+          console.error("Error in $asyncQueue: ", e);
         }
       }
       dirty = this.$$digestOnce();
@@ -244,29 +247,36 @@ function Scope() {
   this.$$digestOnce = function() {
     var dirty;
     var continueLoop = true;
-    this.$$everyScope(function(scope) {
-      var newValue, oldValue;
-      _.forEachRight(scope.$$watchers, function(watcher){
-        if (watcher) {
-          try {
-            newValue = watcher.watcherFn(scope);
-            oldValue = watcher.last;
-            if (!scope.$$areEqual(newValue, oldValue, watcher.compareByValue)) {
-              dirty = true;
-              this.$root.$$lastDirtyWatcher = watcher;
-              watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
-              watcher.listenerFn(newValue, oldValue, scope);
-            } else if (this.$root.$$lastDirtyWatcher === watcher) {
-              continueLoop = false;
-              return false; //return false in a lodash loop causes it to break
+    this.$$everyScope(
+      function(scope) {
+        var newValue, oldValue;
+        _.forEachRight(
+          scope.$$watchers,
+          function(watcher) {
+            if (watcher) {
+              try {
+                newValue = watcher.watcherFn(scope);
+                oldValue = watcher.last;
+                if (
+                  !scope.$$areEqual(newValue, oldValue, watcher.compareByValue)
+                ) {
+                  dirty = true;
+                  this.$root.$$lastDirtyWatcher = watcher;
+                  watcher.last = watcher.compareByValue ? _.cloneDeep(newValue) : newValue;
+                  watcher.listenerFn(newValue, oldValue, scope);
+                } else if (this.$root.$$lastDirtyWatcher === watcher) {
+                  continueLoop = false;
+                  return false; //return false in a lodash loop causes it to break
+                }
+              } catch (e) {
+                console.error(e);
+              }
             }
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }.bind(this));
-      return continueLoop;
-    }.bind(this));
+          }.bind(this)
+        );
+        return continueLoop;
+      }.bind(this)
+    );
 
     return dirty;
   };
@@ -281,14 +291,19 @@ function Scope() {
     }
   };
 
-  this.$$postDigest = function(fn){
+  this.$$postDigest = function(fn) {
     this.$$postDigestQueue.push(fn);
   };
 
   this.$$areEqual = function(newValue, oldValue, compareByValue) {
     if (compareByValue) return _.isEqual(newValue, oldValue);
-    return newValue === oldValue ||
-      (typeof newValue === 'number' && typeof oldValue === 'number' && isNaN(newValue) && isNaN(oldValue));
+    return (
+      newValue === oldValue ||
+      (typeof newValue === "number" &&
+        typeof oldValue === "number" &&
+        isNaN(newValue) &&
+        isNaN(oldValue))
+    );
   };
 
   this.$eval = function(fn, locals) {
@@ -296,7 +311,7 @@ function Scope() {
   };
 
   this.$apply = function(fn, locals) {
-    this.$beginPhase('$apply');
+    this.$beginPhase("$apply");
     try {
       fn(this, locals);
     } finally {
@@ -308,9 +323,12 @@ function Scope() {
 
   this.$evalAsync = function(fn) {
     if (!this.$$phase && !this.$$asyncQueue.length) {
-      setTimeout(function(){
-        if (this.$$asyncQueue.length) this.$root.$digest();
-      }.bind(this), 0);
+      setTimeout(
+        function() {
+          if (this.$$asyncQueue.length) this.$root.$digest();
+        }.bind(this),
+        0
+      );
     }
 
     this.$$asyncQueue.push({
@@ -320,14 +338,19 @@ function Scope() {
   };
 
   this.$applyAsync = function(fn) {
-    this.$$applyAsyncQueue.push(function(){
-      this.$eval(fn);
-    }.bind(this));
+    this.$$applyAsyncQueue.push(
+      function() {
+        this.$eval(fn);
+      }.bind(this)
+    );
 
     if (!this.$root.$$applyAsyncId) {
-      this.$root.$$applyAsyncId = setTimeout(function(){
-        this.$apply(_.bind(this.$$flushApplyAsync, this));
-      }.bind(this), 0);
+      this.$root.$$applyAsyncId = setTimeout(
+        function() {
+          this.$apply(_.bind(this.$$flushApplyAsync, this));
+        }.bind(this),
+        0
+      );
     }
   };
 
@@ -336,7 +359,7 @@ function Scope() {
       try {
         this.$$applyAsyncQueue.shift()();
       } catch (e) {
-        console.error('Error in $applyAsync: ', e);
+        console.error("Error in $applyAsync: ", e);
       }
     }
     this.$root.$$applyAsyncId = null;
@@ -347,7 +370,7 @@ function Scope() {
       try {
         this.$$postDigestQueue.shift()();
       } catch (e) {
-        console.error('Error in $$postDigest: ', e);
+        console.error("Error in $$postDigest: ", e);
       }
     }
   };
@@ -361,6 +384,36 @@ function Scope() {
       }
     }
     this.$$watchers = null;
+  };
+
+  this.$on = function(event, fn) {
+    if (this.$$listeners[event]) {
+      this.$$listeners[event].push(fn);
+    } else {
+      this.$$listeners[event] = [fn];
+    }
+  };
+
+  this.$emit = function(event) {
+    var additionalArgs = _.tail(arguments);
+    return this.$$fireEventOnScope(event, additionalArgs);
+  };
+
+  this.$broadcast = function(event) {
+    var additionalArgs = _.tail(arguments);
+    return this.$$fireEventOnScope(event, additionalArgs);
+  };
+
+  this.$$fireEventOnScope = function(event, additionalArgs) {
+    var listeners = this.$$listeners[event] || [];
+    var eventObject = {
+      name: event
+    };
+    var listenerArgs = [eventObject].concat(additionalArgs);
+    _.forEach(listeners, function(listener){
+      listener.apply(null, listenerArgs);
+    });
+    return eventObject;
   };
 }
 

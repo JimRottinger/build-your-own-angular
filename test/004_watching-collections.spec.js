@@ -1,23 +1,25 @@
-'use strict';
+"use strict";
 
-var Scope = require('../src/scope');
-var _ = require('lodash');
+var Scope = require("../src/scope");
+var _ = require("lodash");
 
-describe('Watching Collections', function(){
+describe("Watching Collections", function() {
   var scope;
 
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('works like a normal watch for non-collections', function() {
+  it("works like a normal watch for non-collections", function() {
     var valueProvided;
 
     scope.aValue = 42;
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         valueProvided = newValue;
         scope.counter++;
@@ -36,12 +38,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('works like a normal watch for NaNs', function() {
-    scope.aValue = 0/0;
+  it("works like a normal watch for NaNs", function() {
+    scope.aValue = 0 / 0;
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -54,11 +58,13 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(1);
   });
 
-  it('notices when the value becomes an array', function() {
+  it("notices when the value becomes an array", function() {
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -75,12 +81,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices an item added to an array', function() {
+  it("notices an item added to an array", function() {
     scope.arr = [1, 2, 3];
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -97,12 +105,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices an item removed from an array', function() {
+  it("notices an item removed from an array", function() {
     scope.arr = [1, 2, 3];
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -119,12 +129,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices an item replaced in an array', function() {
+  it("notices an item replaced in an array", function() {
     scope.arr = [1, 2, 3];
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -141,12 +153,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices items reordered in an array', function() {
+  it("notices items reordered in an array", function() {
     scope.arr = [2, 1, 3];
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -163,12 +177,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('does not fail on NaNs in arrays', function() {
+  it("does not fail on NaNs in arrays", function() {
     scope.arr = [2, NaN, 3];
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arr; },
+      function(scope) {
+        return scope.arr;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -178,14 +194,16 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(1);
   });
 
-  it('notices an item replaced in an arguments object', function() {
+  it("notices an item replaced in an arguments object", function() {
     (function() {
       scope.arrayLike = arguments;
     })(1, 2, 3);
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arrayLike; },
+      function(scope) {
+        return scope.arrayLike;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -202,13 +220,15 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices an item replaced in a NodeList object', function() {
-    document.documentElement.appendChild(document.createElement('div'));
-    scope.arrayLike = document.getElementsByTagName('div');
+  it("notices an item replaced in a NodeList object", function() {
+    document.documentElement.appendChild(document.createElement("div"));
+    scope.arrayLike = document.getElementsByTagName("div");
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.arrayLike; },
+      function(scope) {
+        return scope.arrayLike;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -217,7 +237,7 @@ describe('Watching Collections', function(){
     scope.$digest();
     expect(scope.counter).toBe(1);
 
-    document.documentElement.appendChild(document.createElement('div'));
+    document.documentElement.appendChild(document.createElement("div"));
     scope.$digest();
     expect(scope.counter).toBe(2);
 
@@ -225,11 +245,13 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices when the value becomes an object', function() {
+  it("notices when the value becomes an object", function() {
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -238,7 +260,7 @@ describe('Watching Collections', function(){
     scope.$digest();
     expect(scope.counter).toBe(1);
 
-    scope.obj = {a: 1};
+    scope.obj = { a: 1 };
     scope.$digest();
     expect(scope.counter).toBe(2);
 
@@ -246,12 +268,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices when an attribute is added to an object', function() {
+  it("notices when an attribute is added to an object", function() {
     scope.counter = 0;
-    scope.obj = {a: 1};
+    scope.obj = { a: 1 };
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -268,12 +292,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('notices when an attribute is changed in an object', function() {
+  it("notices when an attribute is changed in an object", function() {
     scope.counter = 0;
-    scope.obj = {a: 1};
+    scope.obj = { a: 1 };
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -290,12 +316,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('does not fail on NaN attributes in objects', function() {
+  it("does not fail on NaN attributes in objects", function() {
     scope.counter = 0;
-    scope.obj = {a: NaN};
+    scope.obj = { a: NaN };
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -305,12 +333,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(1);
   });
 
-  it('notices when an attribute is removed from an object', function() {
+  it("notices when an attribute is removed from an object", function() {
     scope.counter = 0;
-    scope.obj = {a: 1};
+    scope.obj = { a: 1 };
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -327,12 +357,14 @@ describe('Watching Collections', function(){
     expect(scope.counter).toBe(2);
   });
 
-  it('does not consider any object with a length property an array', function() {
-    scope.obj = {length: 42, otherKey: 'abc'};
+  it("does not consider any object with a length property an array", function() {
+    scope.obj = { length: 42, otherKey: "abc" };
     scope.counter = 0;
 
     scope.$watchCollection(
-      function(scope) { return scope.obj; },
+      function(scope) {
+        return scope.obj;
+      },
       function(newValue, oldValue, scope) {
         scope.counter++;
       }
@@ -340,18 +372,20 @@ describe('Watching Collections', function(){
 
     scope.$digest();
 
-    scope.obj.newKey = 'def';
+    scope.obj.newKey = "def";
     scope.$digest();
 
     expect(scope.counter).toBe(2);
   });
 
-  it('gives the old non-collection value to listeners', function() {
+  it("gives the old non-collection value to listeners", function() {
     scope.aValue = 42;
     var oldValueGiven;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         oldValueGiven = oldValue;
       }
@@ -365,12 +399,14 @@ describe('Watching Collections', function(){
     expect(oldValueGiven).toBe(42);
   });
 
-  it('gives the old array value to listeners', function() {
+  it("gives the old array value to listeners", function() {
     scope.aValue = [1, 2, 3];
     var oldValueGiven;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         oldValueGiven = oldValue;
       }
@@ -384,12 +420,14 @@ describe('Watching Collections', function(){
     expect(oldValueGiven).toEqual([1, 2, 3]);
   });
 
-  it('gives the old object value to listeners', function() {
-    scope.aValue = {a: 1, b: 2};
+  it("gives the old object value to listeners", function() {
+    scope.aValue = { a: 1, b: 2 };
     var oldValueGiven;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         oldValueGiven = oldValue;
       }
@@ -400,15 +438,17 @@ describe('Watching Collections', function(){
     scope.aValue.c = 3;
     scope.$digest();
 
-    expect(oldValueGiven).toEqual({a: 1, b: 2});
+    expect(oldValueGiven).toEqual({ a: 1, b: 2 });
   });
 
-  it('uses the new value as the old value on first digest', function() {
-    scope.aValue = {a: 1, b: 2};
+  it("uses the new value as the old value on first digest", function() {
+    scope.aValue = { a: 1, b: 2 };
     var oldValueGiven;
 
     scope.$watchCollection(
-      function(scope) { return scope.aValue; },
+      function(scope) {
+        return scope.aValue;
+      },
       function(newValue, oldValue, scope) {
         oldValueGiven = oldValue;
       }
@@ -416,6 +456,6 @@ describe('Watching Collections', function(){
 
     scope.$digest();
 
-    expect(oldValueGiven).toEqual({a: 1, b: 2});
+    expect(oldValueGiven).toEqual({ a: 1, b: 2 });
   });
 });

@@ -1,29 +1,29 @@
-'use strict';
+"use strict";
 
-var Scope = require('../src/scope');
-var _ = require('lodash');
+var Scope = require("../src/scope");
+var _ = require("lodash");
 
-describe('scope.$eval', function(){
+describe("scope.$eval", function() {
   var scope;
 
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('executes $evaled function and returns result', function() {
+  it("executes $evaled function and returns result", function() {
     scope.value = 11;
 
-    var result = scope.$eval(function(scope){
+    var result = scope.$eval(function(scope) {
       return scope.value;
     });
 
     expect(result).toEqual(11);
   });
 
-  it('passes the second $eval argument straight through', function() {
+  it("passes the second $eval argument straight through", function() {
     scope.value = 11;
 
-    var result = scope.$eval(function(scope, arg){
+    var result = scope.$eval(function(scope, arg) {
       return scope.value + 6;
     }, 6);
 
@@ -31,21 +31,20 @@ describe('scope.$eval', function(){
   });
 });
 
-describe ('scope.$apply', function(){
+describe("scope.$apply", function() {
   var scope;
 
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('executes the given function and starts the digest', function() {
+  it("executes the given function and starts the digest", function() {
     var listenerFn = jasmine.createSpy();
-    scope.$watch(
-      function(scope) { return scope.value; },
-      listenerFn
-    );
+    scope.$watch(function(scope) {
+      return scope.value;
+    }, listenerFn);
 
-    scope.$apply(function(scope, arg){
+    scope.$apply(function(scope, arg) {
       scope.value = 1;
     });
 
@@ -54,22 +53,24 @@ describe ('scope.$apply', function(){
   });
 });
 
-describe('scope.$evalAsync', function(){
+describe("scope.$evalAsync", function() {
   var scope;
 
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('executes given function later in the same cycle', function() {
-    scope.value = [1,2,3];
+  it("executes given function later in the same cycle", function() {
+    scope.value = [1, 2, 3];
     scope.asyncEvaluated = false;
     scope.asyncEvaluatedImmediately = false;
 
     scope.$watch(
-      function(scope) { return scope.value; },
+      function(scope) {
+        return scope.value;
+      },
       function(newValue, oldValue, scope) {
-        scope.$evalAsync(function(scope){
+        scope.$evalAsync(function(scope) {
           scope.asyncEvaluated = true;
         });
         scope.asyncEvaluatedImmediately = scope.asyncEvaluated;
@@ -81,8 +82,8 @@ describe('scope.$evalAsync', function(){
     expect(scope.asyncEvaluatedImmediately).toBe(false);
   });
 
-  it('executes $evalAsynced functions added by watch functions', function() {
-    scope.value = [1,2,3];
+  it("executes $evalAsynced functions added by watch functions", function() {
+    scope.value = [1, 2, 3];
     scope.asyncEvalulated = false;
 
     scope.$watch(
@@ -94,22 +95,24 @@ describe('scope.$evalAsync', function(){
         }
         return scope.value;
       },
-      function(newValue, oldValue, scope) { }
+      function(newValue, oldValue, scope) {}
     );
 
     scope.$digest();
     expect(scope.asyncEvalulated).toBe(true);
   });
 
-  it('executes given function later in the same cycle', function() {
-    scope.value = [1,2,3];
+  it("executes given function later in the same cycle", function() {
+    scope.value = [1, 2, 3];
     scope.asyncEvaluated = false;
     scope.asyncEvaluatedImmediately = false;
 
     scope.$watch(
-      function(scope) { return scope.value; },
+      function(scope) {
+        return scope.value;
+      },
       function(newValue, oldValue, scope) {
-        scope.$evalAsync(function(scope){
+        scope.$evalAsync(function(scope) {
           scope.asyncEvaluated = true;
         });
         scope.asyncEvaluatedImmediately = scope.asyncEvaluated;
@@ -121,8 +124,8 @@ describe('scope.$evalAsync', function(){
     expect(scope.asyncEvaluatedImmediately).toBe(false);
   });
 
-  it('executes $evalAsynced functions added by watch functions', function() {
-    scope.value = [1,2,3];
+  it("executes $evalAsynced functions added by watch functions", function() {
+    scope.value = [1, 2, 3];
     scope.asyncEvalulatedTimes = 0;
 
     scope.$watch(
@@ -134,59 +137,63 @@ describe('scope.$evalAsync', function(){
         }
         return scope.value;
       },
-      function(newValue, oldValue, scope) { }
+      function(newValue, oldValue, scope) {}
     );
 
     scope.$digest();
     expect(scope.asyncEvalulatedTimes).toBe(2);
   });
 
-  it('schedules a digest in $evalAsync', function(done){
+  it("schedules a digest in $evalAsync", function(done) {
     scope.value = 1;
     var listenerFn = jasmine.createSpy();
 
-    scope.$watch(
-      function(scope){ return scope.value; },
-      listenerFn
-    );
+    scope.$watch(function(scope) {
+      return scope.value;
+    }, listenerFn);
 
-    scope.$evalAsync(function(scope){});
+    scope.$evalAsync(function(scope) {});
     expect(listenerFn.calls.count()).toEqual(0);
-    setTimeout(function(){
+    setTimeout(function() {
       expect(listenerFn.calls.count()).toEqual(1);
       done();
     }, 50);
   });
 
-  it('should correctly catch an error in the eval asynced function', function(done){
+  it("should correctly catch an error in the eval asynced function", function(done) {
     scope.counter = 0;
     scope.$watch(
       function(scope) {
         return scope.value;
       },
-      function(){ scope.counter++; }
+      function() {
+        scope.counter++;
+      }
     );
 
-    scope.$evalAsync(function(scope){
+    scope.$evalAsync(function(scope) {
       throw "Error in eval Async";
     });
 
-    setTimeout(function(){
-      expect(scope.counter).toEqual(1);
-      done();
-    }.bind(this), 50);
+    setTimeout(
+      function() {
+        expect(scope.counter).toEqual(1);
+        done();
+      }.bind(this),
+      50
+    );
   });
 });
 
-describe('scope.$$phase', function(){
+describe("scope.$$phase", function() {
   var scope;
 
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('has a $$phase field whose value is the current digest phase', function() {
-    scope.value = [1,2,3];
+  it("has a $$phase field whose value is the current digest phase", function() {
+    scope.value = [1, 2, 3];
     scope.phaseInWatchFunction = undefined;
     scope.phaseInListenerFunction = undefined;
     scope.phaseInApplyFunction = undefined;
@@ -194,7 +201,7 @@ describe('scope.$$phase', function(){
     expect(scope.$$phase).toEqual(null);
 
     scope.$watch(
-      function(scope){
+      function(scope) {
         scope.phaseInWatchFunction = scope.$$phase;
       },
       function(oldValue, newValue, scope) {
@@ -206,49 +213,50 @@ describe('scope.$$phase', function(){
       scope.phaseInApplyFunction = scope.$$phase;
     });
 
-    expect(scope.phaseInWatchFunction).toEqual('$digest');
-    expect(scope.phaseInListenerFunction).toEqual('$digest');
-    expect(scope.phaseInApplyFunction).toEqual('$apply');
+    expect(scope.phaseInWatchFunction).toEqual("$digest");
+    expect(scope.phaseInListenerFunction).toEqual("$digest");
+    expect(scope.phaseInApplyFunction).toEqual("$apply");
   });
 });
 
-describe('$applyAsync', function(){
+describe("$applyAsync", function() {
   var scope;
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('allows async $apply with $applyAsync', function(done){
+  it("allows async $apply with $applyAsync", function(done) {
     scope.value = 1;
     var listenerFn = jasmine.createSpy();
 
-    scope.$watch(
-      function(scope){ return scope.value; },
-      listenerFn
-    );
+    scope.$watch(function(scope) {
+      return scope.value;
+    }, listenerFn);
 
     scope.$digest();
     expect(listenerFn.calls.count()).toEqual(1);
 
-    scope.$applyAsync(function(scope){
+    scope.$applyAsync(function(scope) {
       scope.value = 2;
     });
     expect(listenerFn.calls.count()).toEqual(1);
 
-    setTimeout(function(){
+    setTimeout(function() {
       expect(listenerFn.calls.count()).toEqual(2);
       done();
     }, 50);
   });
 
-  it('never executes $applyAsynced function in the same cycle', function(done){
+  it("never executes $applyAsynced function in the same cycle", function(done) {
     scope.value = 1;
     scope.asyncApplied = false;
 
     scope.$watch(
-      function(scope) { return scope.value; },
+      function(scope) {
+        return scope.value;
+      },
       function(newValue, oldValue, scope) {
-        scope.$applyAsync(function(scope){
+        scope.$applyAsync(function(scope) {
           scope.asyncApplied = true;
         });
       }
@@ -256,13 +264,13 @@ describe('$applyAsync', function(){
 
     scope.$digest();
     expect(scope.asyncApplied).toBe(false);
-    setTimeout(function(){
+    setTimeout(function() {
       expect(scope.asyncApplied).toBe(true);
       done();
     }, 50);
   });
 
-  it('should coalesce many calls to $applyAsync', function(done){
+  it("should coalesce many calls to $applyAsync", function(done) {
     var watchCalls = 0;
 
     scope.$watch(
@@ -270,23 +278,23 @@ describe('$applyAsync', function(){
         watchCalls++;
         return scope.value;
       },
-      function(){}
+      function() {}
     );
 
-    scope.$applyAsync(function(scope){
+    scope.$applyAsync(function(scope) {
       scope.value = 2;
     });
-    scope.$applyAsync(function(scope){
+    scope.$applyAsync(function(scope) {
       scope.value = 3;
     });
 
-    setTimeout(function(){
+    setTimeout(function() {
       expect(watchCalls).toEqual(2);
       done();
     }, 50);
   });
 
-  it('should cancel and flush $applyAsync if digested first', function(done){
+  it("should cancel and flush $applyAsync if digested first", function(done) {
     scope.value = 0;
     var watchCalls = 0;
 
@@ -295,13 +303,13 @@ describe('$applyAsync', function(){
         watchCalls++;
         return scope.value;
       },
-      function(){}
+      function() {}
     );
 
-    scope.$applyAsync(function(scope){
+    scope.$applyAsync(function(scope) {
       scope.value = 1;
     });
-    scope.$applyAsync(function(scope){
+    scope.$applyAsync(function(scope) {
       scope.value = 2;
     });
 
@@ -309,23 +317,23 @@ describe('$applyAsync', function(){
     expect(watchCalls).toBe(2);
     expect(scope.value).toEqual(2);
 
-    setTimeout(function(){
+    setTimeout(function() {
       expect(watchCalls).toBe(2); //should still be 2 because the async digest should not happen
       done();
     }, 50);
   });
 });
 
-describe('$$postDigest', function(){
+describe("$$postDigest", function() {
   var scope;
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it('should run the post digest after each digest', function() {
+  it("should run the post digest after each digest", function() {
     scope.counter = 0;
 
-    scope.$$postDigest(function(){
+    scope.$$postDigest(function() {
       scope.counter++;
     });
 
@@ -339,55 +347,66 @@ describe('$$postDigest', function(){
   });
 });
 
-describe('$watchGroup', function(){
+describe("$watchGroup", function() {
   var scope;
-  beforeEach(function(){
+  beforeEach(function() {
     scope = new Scope();
   });
 
-  it ('takes watches as an array and calls listener with arrays', function(){
+  it("takes watches as an array and calls listener with arrays", function() {
     var gotNewValues, gotOldValues;
 
     scope.value = 1;
     scope.value2 = 2;
 
-    scope.$watchGroup([
-      function(scope) { return scope.value; },
-      function(scope) { return scope.value2; }
-    ],
-    function(newValues, oldValues, scope){
-      gotNewValues = newValues;
-      gotOldValues = oldValues;
-    });
+    scope.$watchGroup(
+      [
+        function(scope) {
+          return scope.value;
+        },
+        function(scope) {
+          return scope.value2;
+        }
+      ],
+      function(newValues, oldValues, scope) {
+        gotNewValues = newValues;
+        gotOldValues = oldValues;
+      }
+    );
     scope.$digest();
 
     scope.value = 11;
     scope.value2 = 22;
     scope.$digest();
-    expect(gotNewValues).toEqual([11,22]);
-    expect(gotOldValues).toEqual([1,2]);
+    expect(gotNewValues).toEqual([11, 22]);
+    expect(gotOldValues).toEqual([1, 2]);
   });
 
-  it ('should only call the listener once per digest', function(){
+  it("should only call the listener once per digest", function() {
     scope.value = 1;
     scope.value2 = 2;
     var listenerFn = jasmine.createSpy();
 
-    scope.$watchGroup([
-      function(scope) { return scope.value; },
-      function(scope) { return scope.value2; }
-    ],
-    listenerFn
+    scope.$watchGroup(
+      [
+        function(scope) {
+          return scope.value;
+        },
+        function(scope) {
+          return scope.value2;
+        }
+      ],
+      listenerFn
     );
     scope.$digest();
 
     expect(listenerFn.calls.count()).toEqual(1);
   });
 
-  it ('should take in an empty array of watchers and call the listener once', function(){
+  it("should take in an empty array of watchers and call the listener once", function() {
     var newVals, oldVals;
 
-    scope.$watchGroup([], function(newValues, oldValues, scope){
+    scope.$watchGroup([], function(newValues, oldValues, scope) {
       newVals = newValues;
       oldVals = oldValues;
     });
@@ -397,16 +416,23 @@ describe('$watchGroup', function(){
     expect(oldVals).toEqual([]);
   });
 
-  it ('can deregister a watch group', function(){
+  it("can deregister a watch group", function() {
     var listenerFn = jasmine.createSpy();
 
     scope.value = 1;
     scope.value2 = 2;
 
-    var destroyGroup = scope.$watchGroup([
-      function(scope){ return scope.value; },
-      function(scope){ return scope.value2; }
-    ], listenerFn);
+    var destroyGroup = scope.$watchGroup(
+      [
+        function(scope) {
+          return scope.value;
+        },
+        function(scope) {
+          return scope.value2;
+        }
+      ],
+      listenerFn
+    );
     scope.$digest();
     expect(listenerFn.calls.count()).toEqual(1);
 
