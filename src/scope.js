@@ -386,12 +386,19 @@ function Scope() {
     this.$$watchers = null;
   };
 
-  this.$on = function(event, fn) {
-    if (this.$$listeners[event]) {
-      this.$$listeners[event].push(fn);
-    } else {
-      this.$$listeners[event] = [fn];
+  this.$on = function(eventName, listener) {
+    var listeners = this.$$listeners[eventName];
+    if (!listeners) {
+      this.$$listeners[eventName] = listeners = [];
     }
+    listeners.push(listener);
+
+    return function() {
+      var index = listeners.indexOf(listener);
+      if (index >= 0) {
+        listeners[index] = null;
+      }
+    };
   };
 
   this.$emit = function(event) {
@@ -410,9 +417,16 @@ function Scope() {
       name: event
     };
     var listenerArgs = [eventObject].concat(additionalArgs);
-    _.forEach(listeners, function(listener){
-      listener.apply(null, listenerArgs);
-    });
+    var i = 0;
+    while (i < listeners.length) {
+      if (listeners[i] === null) {
+        listeners.splice(i, 1);
+      } else {
+        listeners[i].apply(null, listenerArgs);
+        i++;
+      }
+    }
+
     return eventObject;
   };
 }
