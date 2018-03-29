@@ -401,22 +401,29 @@ function Scope() {
     };
   };
 
-  this.$emit = function(event) {
-    var additionalArgs = _.tail(arguments);
-    return this.$$fireEventOnScope(event, additionalArgs);
+  this.$emit = function(eventName) {
+    var eventObject = {name: eventName};
+    var listenerArgs = [eventObject].concat(_.tail(arguments));
+    var scope = this;
+    do {
+      scope.$$fireEventOnScope(eventName, listenerArgs);
+      scope = scope.$parent;
+    } while (scope);
+    return eventObject;
   };
 
-  this.$broadcast = function(event) {
-    var additionalArgs = _.tail(arguments);
-    return this.$$fireEventOnScope(event, additionalArgs);
+  this.$broadcast = function(eventName) {
+    var eventObject = {name: eventName};
+    var listenerArgs = [eventObject].concat(_.tail(arguments));
+    this.$$everyScope(function(scope){
+      scope.$$fireEventOnScope(eventName, listenerArgs);
+      return true;
+    });
+    return eventObject;
   };
 
-  this.$$fireEventOnScope = function(event, additionalArgs) {
-    var listeners = this.$$listeners[event] || [];
-    var eventObject = {
-      name: event
-    };
-    var listenerArgs = [eventObject].concat(additionalArgs);
+  this.$$fireEventOnScope = function(eventName, listenerArgs) {
+    var listeners = this.$$listeners[eventName] || [];
     var i = 0;
     while (i < listeners.length) {
       if (listeners[i] === null) {
@@ -426,8 +433,6 @@ function Scope() {
         i++;
       }
     }
-
-    return eventObject;
   };
 }
 
