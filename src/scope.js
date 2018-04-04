@@ -402,23 +402,43 @@ function Scope() {
   };
 
   this.$emit = function(eventName) {
-    var eventObject = {name: eventName};
+    var propagationStopped = false;
+    var eventObject = {
+      name: eventName,
+      targetScope: this,
+      stopPropagation: function() {
+        propagationStopped = true;
+      },
+      preventDefault: function() {
+        eventObject.defaultPrevented = true;
+      }
+    };
     var listenerArgs = [eventObject].concat(_.tail(arguments));
     var scope = this;
     do {
+      eventObject.currentScope = scope;
       scope.$$fireEventOnScope(eventName, listenerArgs);
       scope = scope.$parent;
-    } while (scope);
+    } while (scope && !propagationStopped);
+    eventObject.currentScope = null;
     return eventObject;
   };
 
   this.$broadcast = function(eventName) {
-    var eventObject = {name: eventName};
+    var eventObject = {
+      name: eventName,
+      targetScope: this,
+      preventDefault: function() {
+        eventObject.defaultPrevented = true;
+      }
+    };
     var listenerArgs = [eventObject].concat(_.tail(arguments));
     this.$$everyScope(function(scope){
+      eventObject.currentScope = scope;
       scope.$$fireEventOnScope(eventName, listenerArgs);
       return true;
     });
+    eventObject.currentScope = null;
     return eventObject;
   };
 
