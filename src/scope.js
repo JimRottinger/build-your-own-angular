@@ -376,6 +376,7 @@ function Scope() {
   };
 
   this.$destroy = function() {
+    this.$broadcast('$destroy');
     if (this.$parent) {
       var siblings = this.$parent.$$children;
       var indexOfThis = siblings.indexOf(this);
@@ -384,6 +385,7 @@ function Scope() {
       }
     }
     this.$$watchers = null;
+    this.$$listeners = {};
   };
 
   this.$on = function(eventName, listener) {
@@ -449,7 +451,11 @@ function Scope() {
       if (listeners[i] === null) {
         listeners.splice(i, 1);
       } else {
-        listeners[i].apply(null, listenerArgs);
+        try {
+          listeners[i].apply(null, listenerArgs);
+        } catch (err) {
+          console.error(err);
+        }
         i++;
       }
     }

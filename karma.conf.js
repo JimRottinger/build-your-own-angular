@@ -3,7 +3,7 @@ module.exports = function(config) {
     frameworks: ['browserify', 'jasmine'],
     files: [
       'src/**/*.js',
-      'test/**/*.spec.js'
+      'test/**/006*.spec.js'
     ],
     preprocessors: {
       'test/**/*.js': ['jshint', 'browserify'],
