@@ -10,7 +10,11 @@ function Lexer() {
     while (this.index < this.text.length) {
       this.ch = this.text.charAt(this.index);
 
-      if (this.isNumber(this.ch)) {
+      if (
+        this.isNumber(this.ch) ||
+        (this.ch === '-' && (this.isNumber(this.peek()) || this.peek() === '.')) ||
+        (this.ch === '.' && this.isNumber(this.peek()))
+      ) {
         this.readNumber();
       } else {
         throw 'Unexpected next character: ' + this.ch;
@@ -20,6 +24,12 @@ function Lexer() {
     return this.tokens;
   };
 
+  this.peek = function() {
+    return this.index < this.text.length - 1 ?
+      this.text.charAt(this.index + 1) :
+      false;
+  };
+
   this.isNumber = function(ch) {
     return '0' <= ch && ch <= '9';
   };
@@ -27,12 +37,39 @@ function Lexer() {
   this.readNumber = function() {
     var number = '';
     while (this.index < this.text.length) {
-      var ch = this.text.charAt(this.index);
+      var ch = this.text.charAt(this.index).toLowerCase();
 
-      if (this.isNumber(ch)) {
+      if (ch === '.' || this.isNumber(ch)) {
         number += ch;
       } else {
-        break;
+        var nextCh = this.peek();
+        var prevCh = number.charAt(number.length - 1);
+
+        //negative integer or float
+        if (
+          ch === '-' && (this.isNumber(nextCh) || nextCh === '.') &&
+          (!prevCh || (!this.isNumber(prevCh) && prevCh !== 'e'))
+        ) {
+          number += ch;
+        }
+        //scientific notation
+        else if (ch === 'e' && this.isExpOperator(nextCh)) {
+          number += ch;
+        } else if (
+          this.isExpOperator(ch) && prevCh === 'e' &&
+          nextCh && this.isNumber(nextCh)
+        ) {
+          number += ch;
+        }
+        //scientifc notation must be follow by a number
+        else if (
+          this.isExpOperator(ch) && prevCh === 'e' &&
+          (!nextCh || !this.isNumber(nextCh))
+        ) {
+          throw 'Invalid exponent';
+        } else {
+          break;
+        }
       }
       this.index++;
     }
@@ -41,6 +78,10 @@ function Lexer() {
       text: number,
       value: Number(number)
     });
+  };
+
+  this.isExpOperator = function(ch) {
+    return ch === '-' || ch === '+' || this.isNumber(ch);
   };
 }
 
