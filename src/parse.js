@@ -1,5 +1,9 @@
 'use strict';
 
+var _ = require('lodash');
+
+var ESCAPES = {'n':'\n', 'f':'\f', 'r':'\r', 't':'\t', 'v':'\v', '\'':'\'', '"':'"'};
+
 function Lexer() {
   this.lex = function(text) {
     this.text = text;
@@ -16,6 +20,8 @@ function Lexer() {
         (this.ch === '.' && this.isNumber(this.peek()))
       ) {
         this.readNumber();
+      } else if (this.ch === '\'' || this.ch === '"') {
+        this.readString(this.ch);
       } else {
         throw 'Unexpected next character: ' + this.ch;
       }
@@ -83,6 +89,47 @@ function Lexer() {
   this.isExpOperator = function(ch) {
     return ch === '-' || ch === '+' || this.isNumber(ch);
   };
+
+  this.readString = function(endChar) {
+    this.index++;
+    var string = '';
+    var escape = false;
+    while (this.index < this.text.length) {
+      var ch = this.text.charAt(this.index);
+
+      if (escape) {
+        if (ch === 'u') {
+          var hex = this.text.substring(this.index + 1, this.index + 5);
+          if (!hex.match(/[\da-f]{4}/i)) {
+            throw 'Invalid unicode escape';
+          }
+          this.index += 4;
+          string += String.fromCharCode(parseInt(hex, 16));
+        } else {
+          var replacement = ESCAPES[ch];
+          if (replacement) {
+            string += replacement;
+          } else {
+            string += ch;
+          }
+        }
+        escape = false;
+      } else if (ch === endChar) {
+        this.index++;
+        this.tokens.push({
+          text: string,
+          value: string
+        });
+        return;
+      } else if (ch === '\\') {
+        escape = true;
+      } else {
+        string+= ch;
+      }
+      this.index++;
+    }
+    throw 'Unmatched quote';
+  };
 }
 
 function AST(lexer) {
@@ -123,7 +170,19 @@ function ASTCompiler(astBuilder) {
         this.state.body.push('return ', this.recurse(ast.body), ';');
         break;
       case AST.Literal:
-        return ast.value;
+        return this.escape(ast.value);
+    }
+  };
+
+  this.stringEscapeRegex = /[^ a-zA-Z0-9]/g;
+  this.stringEscapeFn = function(c) {
+    return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
+  };
+  this.escape = function(value) {
+    if (_.isString(value)) {
+      return '\'' + value.replace(this.stringEscapeRegex, this.stringEscapeFn) + '\'';
+    } else {
+      return value;
     }
   };
 }
