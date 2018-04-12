@@ -22,6 +22,10 @@ function Lexer() {
         this.readNumber();
       } else if (this.ch === '\'' || this.ch === '"') {
         this.readString(this.ch);
+      } else if (this.isIdent(this.ch)) {
+        this.readIdent();
+      } else if (this.isWhitespace(this.ch)) {
+        this.index++;
       } else {
         throw 'Unexpected next character: ' + this.ch;
       }
@@ -130,6 +134,30 @@ function Lexer() {
     }
     throw 'Unmatched quote';
   };
+
+  this.isIdent = function(ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_' || ch === '$';
+  };
+
+  this.readIdent = function() {
+    var text = '';
+    while (this.index < this.text.length) {
+      var ch = this.text.charAt(this.index);
+      if (this.isIdent(ch) || this.isNumber(ch)) {
+        text += ch;
+      } else {
+        break;
+      }
+      this.index++;
+    }
+
+    var token = {text: text};
+    this.tokens.push(token);
+  };
+
+  this.isWhitespace = function(ch) {
+    return ch === ' ' || ch === '\r' || ch === '\t' || ch === '\n' || ch === '\v' || ch === '\u00A0';
+  };
 }
 
 function AST(lexer) {
@@ -138,8 +166,22 @@ function AST(lexer) {
   AST.Literal = 'Literal';
   AST.Program = 'Program';
 
+  AST.constants = {
+    'null': { type: AST.Literal, value: null },
+    'true': { type: AST.Literal, value: true },
+    'false': { type: AST.Literal, value: false }
+  };
+
   this.program = function() {
-    return { type: AST.Program, body: this.constant() };
+    return {type: AST.Program, body: this.primary()};
+  };
+
+  this.primary = function() {
+    if (AST.constants.hasOwnProperty(this.tokens[0].text)) {
+      return AST.constants[this.tokens[0].text];
+    } else {
+      return this.constant();
+    }
   };
 
   this.constant = function() {
@@ -181,6 +223,8 @@ function ASTCompiler(astBuilder) {
   this.escape = function(value) {
     if (_.isString(value)) {
       return '\'' + value.replace(this.stringEscapeRegex, this.stringEscapeFn) + '\'';
+    } else if (_.isNull(value)) {
+      return 'null';
     } else {
       return value;
     }
