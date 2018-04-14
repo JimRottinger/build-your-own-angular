@@ -22,6 +22,11 @@ function Lexer() {
         this.readNumber();
       } else if (this.ch === '\'' || this.ch === '"') {
         this.readString(this.ch);
+      } else if (this.ch === '[' || this.ch === ']') {
+        this.tokens.push({
+          text: this.ch
+        });
+        this.index++;
       } else if (this.isIdent(this.ch)) {
         this.readIdent();
       } else if (this.isWhitespace(this.ch)) {
@@ -165,6 +170,7 @@ function AST(lexer) {
 
   AST.Literal = 'Literal';
   AST.Program = 'Program';
+  AST.ArrayExpression = 'ArrayExpression';
 
   AST.constants = {
     'null': { type: AST.Literal, value: null },
@@ -177,7 +183,9 @@ function AST(lexer) {
   };
 
   this.primary = function() {
-    if (AST.constants.hasOwnProperty(this.tokens[0].text)) {
+    if (this.expect('[')) {
+      return this.arrayDeclaration();
+    } else if (AST.constants.hasOwnProperty(this.tokens[0].text)) {
       return AST.constants[this.tokens[0].text];
     } else {
       return this.constant();
@@ -191,6 +199,27 @@ function AST(lexer) {
   this.ast = function(text) {
     this.tokens = this.lexer.lex(text);
     return this.program();
+  };
+
+  this.expect = function(e) {
+    if (this.tokens.length > 0) {
+      if (this.tokens[0].text === e || !e) {
+        return this.tokens.shift();
+      }
+    }
+  };
+
+  this.arrayDeclaration = function() {
+    this.consume(']');
+    return {type: AST.ArrayExpression};
+  };
+
+  this.consume = function(e) {
+    var token = this.expect(e);
+    if (!token) {
+      throw 'Unexpected. Expecting: ' + e;
+    }
+    return token;
   };
 }
 
@@ -213,6 +242,8 @@ function ASTCompiler(astBuilder) {
         break;
       case AST.Literal:
         return this.escape(ast.value);
+      case AST.ArrayExpression:
+        return '[]';
     }
   };
 
